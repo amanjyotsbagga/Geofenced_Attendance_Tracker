@@ -30,3 +30,15 @@ A lightweight, serverless web application built with Google Apps Script that all
    const GEOFENCE_CENTER = { lat: YOUR_LAT, lng: YOUR_LNG };
    const SPREADSHEET_ID = 'YOUR_SPREADSHEET_ID_HERE';
    const ADMIN_EMAIL = 'admin@example.com';
+
+### 3. Deploy
+1. Click Deploy > New deployment.
+2. Select type: Web app.
+3. Execute as: Me.
+4. Who has access: Anyone (or restrict to your Google Workspace domain).
+5. Click Deploy and authorize the script.
+6. Open the resulting Web App URL once as the admin. This automatically creates the "Employees" config sheet and installs the necessary background triggers.
+
+### 4. Manage Employees
+1. Open your Google Sheet and go to the newly created Employees tab.
+2. Add your employees' names, hourly rates, and set their status to "Active".
