@@ -2,7 +2,7 @@
 
 A lightweight, serverless web application built with Google Apps Script that allows employees to mark their attendance (IN/OUT) within a specific geographic radius. All data is logged directly into a Google Sheet, with automated wage calculations and monthly summaries.
 
-## ✨ Features
+## Features
 * **Location-Restricted Punching:** Employees can only mark attendance if they are within a configurable radius (e.g., 100 meters) of the office coordinates.
 * **Automated Wage Calculation:** Automatically calculates regular hours, overtime, and total daily wages based on per-employee rates.
 * **Zero-Touch Monthly Summaries:** Automatically generates new sheets for each month and compiles a wage summary for the previous month.
@@ -10,12 +10,12 @@ A lightweight, serverless web application built with Google Apps Script that all
 * **Admin Dashboard (Google Sheets):** Manage active employees and hourly rates directly from an "Employees" sheet—no code changes required.
 * **Automated Email Reports:** Emails the finalized monthly attendance and wage report (.xlsx) to the admin on the 1st of every month.
 
-## 🛠️ Tech Stack
+## Tech Stack
 * **Backend:** Google Apps Script (`Code.gs`)
 * **Frontend:** HTML, CSS, Vanilla JavaScript (`Index.html`)
 * **Database:** Google Sheets
 
-## 🚀 Setup Instructions
+## Setup Instructions
 
 ### 1. Prepare the Google Sheet
 1. Create a new Google Sheet.
