@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/UAParser.js/0.7.20/ua-parser.min.js"></script>
+    <base target="_top">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+      body { font-family: Arial, sans-serif; margin: 0; padding: 16px; background-color: #f5f5f5; }
+      .container { max-width: 480px; margin: 0 auto; background-color: #ffffff; padding: 16px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.08); }
+      h3 { text-align: center; margin-top: 0; }
+      label { display: block; margin-bottom: 4px; font-weight: 600; }
+      select { width: 100%; box-sizing: border-box; padding: 10px; margin-bottom: 16px; font-size: 16px; }
+      .button-row { display: flex; gap: 8px; margin-bottom: 8px; }
+      .button-row button { flex: 1; padding: 12px; font-size: 16px; border: none; border-radius: 6px; color: #ffffff; cursor: pointer; touch-action: manipulation; }
+      .btn-in { background-color: #2f4f4f; }
+      .btn-out { background-color: #2f4f4f; }
+      .button-row button:disabled { opacity: 0.6; cursor: default; }
+      #message { margin-top: 4px; font-size: 14px; min-height: 18px; text-align:center;}
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h3>In/Out Attendance</h3>
+      <div id="clock" style="text-align:center; margin-bottom:8px; font-size:14px;"></div>
+
+      <form id="attendanceForm" onsubmit="return false;">
+        <label for="name">Name</label>
+        <select id="name" name="name" required disabled>
+          <option value="">Loading employees...</option>
+        </select>
+
+        <div class="button-row">
+          <button type="button" class="btn-in" onclick="submitForm('IN')" disabled>IN</button>
+          <button type="button" class="btn-out" onclick="submitForm('OUT')" disabled>OUT</button>
+        </div>
+      </form>
+
+      <p id="message"></p>
+    </div>
+
+    <script>
+      function getOrSetDeviceId() {
+        var id = localStorage.getItem('attendance_device_id');
+        if (!id) {
+          id = 'dev_' + Math.random().toString(36).substr(2, 9) + Date.now().toString(36);
+          localStorage.setItem('attendance_device_id', id);
+        }
+        return id;
+      }
+
+      async function getDetailedDeviceInfo() {
+        var ua = navigator.userAgent;
+        var baseInfo = {
+          deviceId: getOrSetDeviceId(),
+          browser: '',
+          os: '',
+          deviceType: 'unknown',
+          deviceVendor: '',
+          deviceModel: '',
+          userAgent: ua
+        };
+
+        if (typeof UAParser !== 'undefined') {
+          var parser = new UAParser();
+          var result = parser.getResult();
+          baseInfo.browser = (result.browser.name || '') + ' ' + (result.browser.version || '');
+          baseInfo.os = (result.os.name || '') + ' ' + (result.os.version || '');
+          baseInfo.deviceType = result.device.type || 'desktop';
+          baseInfo.deviceVendor = result.device.vendor || '';
+          baseInfo.deviceModel = result.device.model || '';
+        }
+
+        if (!baseInfo.deviceModel && navigator.userAgentData && navigator.userAgentData.getHighEntropyValues) {
+          try {
+            var hints = await navigator.userAgentData.getHighEntropyValues(['model', 'platform', 'platformVersion']);
+            if (hints.model) {
+              baseInfo.deviceModel = hints.model;
+            }
+          } catch (e) {
+          }
+        }
+
+        if (!baseInfo.deviceModel) {
+          baseInfo.deviceModel = parseModelFallback(ua);
+        }
+
+        return baseInfo;
+      }
+
+      function parseModelFallback(ua) {
+        if (/Android/i.test(ua)) {
+          var match = ua.match(/;\s*([^;)]+?)\s*(?:Build|;|\))/);
+          if (match) {
+            var model = match[1].trim();
+            if (!/^Linux|^Android|^Mobile|^wv$/i.test(model)) {
+              return model;
+            }
+          }
+        }
+        if (/iPhone/i.test(ua)) return 'iPhone';
+        if (/iPad/i.test(ua)) return 'iPad';
+        if (/iPod/i.test(ua)) return 'iPod';
+        if (/Windows/i.test(ua)) return 'Windows PC';
+        if (/Macintosh/i.test(ua)) return 'Mac';
+        if (/CrOS/i.test(ua)) return 'Chromebook';
+        if (/Linux/i.test(ua)) return 'Linux PC';
+        return 'Unknown';
+      }
+
+      function loadEmployees() {
+        google.script.run
+          .withSuccessHandler(function(names) {
+            var select = document.getElementById('name');
+            select.innerHTML = '<option value="">Select your name</option>';
+
+            if (names && names.length > 0) {
+              for (var i = 0; i < names.length; i++) {
+                var opt = document.createElement('option');
+                opt.value = names[i];
+                opt.textContent = names[i];
+                select.appendChild(opt);
+              }
+              select.disabled = false;
+              setButtonsDisabled(false);
+
+              var savedName = localStorage.getItem('attendance_employee_name');
+              if (savedName) {
+                select.value = savedName;
+              }
+            } else {
+              select.innerHTML = '<option value="">No employees found</option>';
+            }
+          })
+          .withFailureHandler(function(err) {
+            var select = document.getElementById('name');
+            select.innerHTML = '<option value="">Error loading employees</option>';
+            setTimeout(loadEmployees, 3000);
+          })
+          .getActiveEmployees();
+      }
+
+      function submitForm(status) {
+        var msg = document.getElementById('message');
+        var name = document.getElementById('name').value;
+
+        if (!name) {
+          msg.textContent = 'Please select your name.';
+          msg.style.color = 'red';
+          return;
+        }
+
+        msg.textContent = 'Submitting...';
+        msg.style.color = 'black';
+
+        if (!navigator.geolocation) {
+          msg.textContent = 'Geolocation is not supported.';
+          return;
+        }
+
+        setButtonsDisabled(true);
+
+        navigator.geolocation.getCurrentPosition(
+          async function(position) {
+            var info = await getDetailedDeviceInfo();
+
+            var data = {
+              name: name,
+              status: status,
+              latitude: position.coords.latitude,
+              longitude: position.coords.longitude,
+              deviceInfo: info
+            };
+
+            google.script.run
+              .withSuccessHandler(function(result) {
+                msg.textContent = 'Submission recorded: ' + status;
+                msg.style.color = 'green';
+                localStorage.setItem('attendance_employee_name', name);
+                setButtonsDisabled(false);
+              })
+              .withFailureHandler(function(err) {
+                msg.textContent = 'Error: ' + err.message;
+                msg.style.color = 'red';
+                setButtonsDisabled(false);
+              })
+              .processSubmission(data);
+          },
+          function(error) {
+            msg.textContent = 'Location access denied or unavailable.';
+            msg.style.color = 'red';
+            setButtonsDisabled(false);
+          },
+          { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+        );
+      }
+
+      function setButtonsDisabled(disabled) {
+        var buttons = document.querySelectorAll('.button-row button');
+        buttons.forEach(function(btn) { btn.disabled = disabled; });
+      }
+
+      function startClock() {
+        var clockEl = document.getElementById('clock');
+        function updateClock() {
+          var now = new Date();
+          var options = {
+            timeZone: 'Asia/Kolkata',
+            year: 'numeric', month: 'short', day: '2-digit',
+            hour: '2-digit', minute: '2-digit', second: '2-digit'
+          };
+          var formatter = new Intl.DateTimeFormat('en-IN', options);
+          clockEl.textContent = formatter.format(now) + ' (IST)';
+        }
+        updateClock();
+        setInterval(updateClock, 1000);
+      }
+
+      window.addEventListener('load', function() {
+        startClock();
+        loadEmployees();
+      });
+    </script>
+  </body>
+</html>
