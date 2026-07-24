@@ -43,7 +43,7 @@ const ATTENDANCE_HEADERS = [
 
 function doGet() {
   ensureSetup_();
-  return HtmlService.createHtmlOutputFromFile('Index').setTitle('Geofenced Attendance Tracker');
+  return HtmlService.createHtmlOutputFromFile('Frontend').setTitle('Geofenced Attendance Tracker');
 }
 
 function getActiveEmployees() {

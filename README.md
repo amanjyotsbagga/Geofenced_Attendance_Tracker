@@ -11,8 +11,8 @@ A lightweight, serverless web application built with Google Apps Script that all
 * **Automated Email Reports:** Emails the finalized monthly attendance and wage report (.xlsx) to the admin on the 1st of every month.
 
 ## Tech Stack
-* **Backend:** Google Apps Script (`Code.gs`)
-* **Frontend:** HTML, CSS, Vanilla JavaScript (`Index.html`)
+* **Backend:** Google Apps Script (`Backend.gs`)
+* **Frontend:** HTML, CSS, Vanilla JavaScript (`Frontend.html`)
 * **Database:** Google Sheets
 
 ## Setup Instructions
@@ -23,9 +23,9 @@ A lightweight, serverless web application built with Google Apps Script that all
 
 ### 2. Configure Apps Script
 1. Open your Google Sheet and go to **Extensions > Apps Script**.
-2. Replace the default code with the contents of `Code.gs`.
-3. Add a new HTML file named `Index.html` and paste the frontend code.
-4. In `Code.gs`, update the Configuration section at the top:
+2. Replace the default code with the contents of `Backend.gs`.
+3. Add a new HTML file named `Frontend.html` and paste the frontend code.
+4. In `Backend.gs`, update the Configuration section at the top:
    ```javascript
    const GEOFENCE_CENTER = { lat: YOUR_LAT, lng: YOUR_LNG };
    const SPREADSHEET_ID = 'YOUR_SPREADSHEET_ID_HERE';
